@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "qpayreminder",
+  "project_id": "d33b575c-5be2-4c62-ade6-87e36b4fb12f"
+}
