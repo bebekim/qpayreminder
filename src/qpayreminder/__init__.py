@@ -1,0 +1,1 @@
+"""QPayReminder application package."""
