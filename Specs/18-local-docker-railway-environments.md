@@ -17,6 +17,9 @@ the fallback.
 
 ## Desired Behavior
 
+- This spec is not yet implemented: the current repo does not have a
+  `Dockerfile`, `docker-compose.yml`, local web app container, or local Docker
+  Postgres wiring until this spec is worked.
 - Local development runs with Docker Compose, using local Postgres and Redis.
 - Local app commands can run through `uv` against local service URLs.
 - Railway has a dedicated `testing` environment for smoke tests and staging
@@ -25,7 +28,10 @@ the fallback.
   stricter deploy controls.
 - Testing and production variables are isolated; no local `.env` file is copied
   into Railway wholesale.
-- Testing and production databases are separate Railway Postgres services.
+- Testing and production databases are separate Railway Postgres services; a
+  Railway testing Postgres is required because testing must validate migrations,
+  deployment config, background jobs, and webhook flows without touching live
+  data.
 - Testing and production Redis instances are separate Railway Redis services.
 - Railway deploys are linked to the `qpayreminder` repo and service explicitly.
 - The app exposes a health endpoint suitable for Railway health checks.
@@ -39,6 +45,26 @@ the fallback.
 | `local` | Docker Compose + uv | Docker Postgres | Docker Redis | Fast dev and TDD |
 | `testing` | Railway | Railway Postgres | Railway Redis | Smoke tests, webhook dry runs, release validation |
 | `production` | Railway | Railway Postgres | Railway Redis | Live system |
+
+## Required Data-Store Separation
+
+Testing must have its own Railway Postgres. It must not share production
+Postgres under any circumstance.
+
+Reasons:
+
+- Migration validation should happen against a Railway-managed database before
+  production.
+- Smoke tests, seed data, cleanup tasks, and provider/webhook experiments must
+  never mutate live records.
+- Railway networking, service variables, private URLs, and deploy behavior
+  should be tested against a real Railway environment, not only local Docker.
+- Testing failures should be recoverable by resetting or replacing the testing
+  database without customer impact.
+
+Local Docker Postgres remains useful for fast development, but it does not
+replace Railway testing Postgres because it does not exercise Railway runtime
+configuration.
 
 ## Railway MCP Expectations
 
@@ -59,7 +85,7 @@ or use Railway CLI manually until the MCP server is loaded.
 
 - Do not deploy live customer traffic before auth, org permissions, invoice
   intake, bank ingestion, and reminder safeguards are ready.
-- Do not share databases between testing and production.
+- Do not share databases between testing and production, even temporarily.
 - Do not store secrets in Git.
 - Do not build a custom deployment control plane.
 - Do not rely on local Docker as a production-equivalent security boundary.
@@ -119,6 +145,10 @@ No test may require production secrets.
 - [ ] The app fails fast with a clear error when required config is missing.
 - [ ] Testing and production Railway environments are created separately.
 - [ ] Testing and production database/Redis variables point to distinct services.
+- [ ] Railway testing has its own Postgres service; it does not point to local
+      Docker or production Postgres.
+- [ ] Railway production has its own Postgres service and cannot be reached by
+      testing deploys or testing jobs.
 - [ ] A health endpoint exists and is covered by tests.
 - [ ] Deployment docs explain local, testing, and production workflows.
 - [ ] Railway MCP usage and CLI fallback are documented.

@@ -10,6 +10,10 @@ QPayReminder uses three separated environments:
 
 ## Local
 
+This is not implemented yet. The current repo needs `Dockerfile`,
+`docker-compose.yml`, env examples, and app health/config wiring before local
+Docker development is operational.
+
 Local development should not depend on Railway secrets. It should use checked-in
 examples plus developer-owned `.env` files ignored by Git.
 
@@ -25,6 +29,9 @@ Testing is the first remote deploy target. It should have its own Railway
 environment, database, Redis instance, generated domain, and environment
 variables.
 
+Testing requires its own Railway Postgres. It must not point at production
+Postgres, even for temporary validation.
+
 Use testing for:
 
 - Smoke tests.
@@ -32,10 +39,17 @@ Use testing for:
 - Webhook endpoint validation with non-production providers.
 - Release candidate checks.
 
+Testing Postgres exists to catch Railway-specific issues that local Docker does
+not exercise: Railway service variables, private networking, deploy-time config,
+migration behavior, background jobs, and webhook callbacks.
+
 ## Railway Production
 
 Production must stay isolated from testing. Production variable writes and
 deploys require an explicit confirmation of the linked Railway environment.
+
+Production requires its own Railway Postgres and Redis services. Testing jobs,
+testing deploys, and local commands must not use production data-store URLs.
 
 Use production for:
 
